@@ -4,7 +4,6 @@ using FileAnalysis.API.Models;
 using FileAnalysis.BLL.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Net;
 
 namespace FileAnalysis.API.Controllers
 {
@@ -25,9 +24,14 @@ namespace FileAnalysis.API.Controllers
         // api/process
         [HttpPost()]
         [SwaggerOperation("Check file for viruses")]
+        [ProducesResponseType(typeof(ScanResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status504GatewayTimeout)]
+        [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status500InternalServerError)]
         public ActionResult<ScanResponse> ScanFile(string url)
         {
+            // Validate URL. If URL is not correct, I will not pass it to BLL
             if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
                 throw new FormatException($"url: '{url}' is not valid.");
 

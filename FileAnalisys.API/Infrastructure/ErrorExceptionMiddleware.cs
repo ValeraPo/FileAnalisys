@@ -1,4 +1,5 @@
 ﻿using FileAnalisys.API.Models;
+using FileAnalisys.BLL.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -24,14 +25,18 @@ namespace FileAnalisys.API.Infrastructure
             {
                 await ConstructResponse(context, HttpStatusCode.BadRequest, error.Message);
             }
-
+            catch (ServiceUnavailableException error)
+            {
+                await ConstructResponse(context, HttpStatusCode.ServiceUnavailable, error.Message);
+            }
             catch (TimeoutException error)
             {
                 await ConstructResponse(context, HttpStatusCode.GatewayTimeout, error.Message);
             }
+            // catch all other exceptions
             catch (Exception ex)
             {
-                await ConstructResponse(context, HttpStatusCode.BadRequest, ex.Message);
+                await ConstructResponse(context, HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
