@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileAnalisys.API", "FileAnalisys.API\FileAnalisys.API.csproj", "{F8595E68-C440-426D-B16A-A65090086158}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileAnalisys.BLL", "FileAnalisys.BLL\FileAnalisys.BLL.csproj", "{9139EE16-294B-4A2A-8292-060749CE5585}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F8595E68-C440-426D-B16A-A65090086158}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8595E68-C440-426D-B16A-A65090086158}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8595E68-C440-426D-B16A-A65090086158}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8595E68-C440-426D-B16A-A65090086158}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9139EE16-294B-4A2A-8292-060749CE5585}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9139EE16-294B-4A2A-8292-060749CE5585}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9139EE16-294B-4A2A-8292-060749CE5585}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9139EE16-294B-4A2A-8292-060749CE5585}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C89C8CF4-C84B-4ADE-9C2E-C5FDC7ABA0D4}
+	EndGlobalSection
+EndGlobal
