@@ -2,7 +2,7 @@
 
 namespace FileAnalysis.BLL.Services
 {
-    public interface IProcessService
+    public interface IScannerService
     {
         ScanModel ScanFile(string url);
     }
