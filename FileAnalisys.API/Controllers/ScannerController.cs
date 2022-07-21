@@ -21,7 +21,7 @@ namespace FileAnalysis.API.Controllers
         }
 
         // Checking file for viruses
-        // api/process
+        // api/scanner
         [HttpPost()]
         [SwaggerOperation("Check file for viruses")]
         [ProducesResponseType(typeof(ScanResponse), StatusCodes.Status200OK)]
