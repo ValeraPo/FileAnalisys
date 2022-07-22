@@ -2,18 +2,22 @@
 using FileAnalysis.BLL.Models;
 using RestSharp;
 using System.Net;
+using System.Runtime.Caching;
 using System.Security.Cryptography;
 
 namespace FileAnalysis.BLL.Services
 {
     public class ScannerService : IScannerService
     {
+        private ObjectCache _cache = MemoryCache.Default;
+
         public ScanModel ScanFile(string url)
         {
             var scanModel = new ScanModel();
             var content = GetContent(url);
-            scanModel.SHA1 = Hash(content); // hashing file
-            scanModel.Result = SendRequest(content); // virus scanning 
+            scanModel.SHA1 = Hash(content); // hash file
+            scanModel.Result = CheckCacheBeforeSend(scanModel.SHA1, content); // scan file
+
             return scanModel;
         }
 
@@ -38,6 +42,8 @@ namespace FileAnalysis.BLL.Services
                     {
                         while (true) //loop to the end of the file
                         {
+                            // I chose '.ReadAsync' because I measured time that both functions required and
+                            // '.ReadAsync' works faster than '.Read'
                             int read = content.ReadAsync(buffer, 0, buffer.Length).Result; //read each chunk
                             if (read <= 0) //check for end of file
                                 return ms.ToArray();
@@ -73,6 +79,25 @@ namespace FileAnalysis.BLL.Services
                 throw new TimeoutException(response.ErrorException.Message);
 
             throw new ServiceUnavailableException(response.ErrorException.Message);
+        }
+
+        // Searching or saving to cache memory
+        // **I understand that it may not fulfill the Single Responsibility principle
+        // **but I think that Send Request should be next to the saving result of scanning in memory
+        public string CheckCacheBeforeSend(string hashKey, byte[] file)
+        {
+            // if we have analised this file, we will not send a request
+            string scanResult;
+            var cacheItem = _cache.GetCacheItem(hashKey);
+            if (cacheItem is null)
+            {
+                scanResult = SendRequest(file); // virus scanning 
+                _cache.Add(hashKey, scanResult, null); // save result in memory cache
+            }
+            else
+                // get result from past scanning 
+                scanResult = (string)cacheItem.Value;
+            return scanResult;
         }
 
     }
