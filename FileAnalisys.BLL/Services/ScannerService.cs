@@ -58,10 +58,11 @@ namespace FileAnalysis.BLL.Services
         // Sending request to scan virus
         public string SendRequest(byte[] content)
         {
+            // create request
             var client = new RestClient("https://localhost:7030");
             var request = new RestRequest("/api/process/", Method.Post);
-
-            request.AddQueryParameter("chunks", content.ToString());
+            request.AddBody(content);
+            // get response
             var response = client.Execute<string>(request);
 
             // Check response
@@ -73,8 +74,6 @@ namespace FileAnalysis.BLL.Services
 
             throw new ServiceUnavailableException(response.ErrorException.Message);
         }
-
-
 
     }
 }
