@@ -11,18 +11,18 @@ namespace FileAnalysis.BLL.Services
     {
         private ObjectCache _cache = MemoryCache.Default;
 
-        public ScanModel ScanFile(string url)
+        public async Task<ScanModel> ScanFile(string url)
         {
             var scanModel = new ScanModel();
-            var content = GetContent(url);
+            var content = await GetContent(url);
             scanModel.SHA1 = Hash(content); // hash file
-            scanModel.Result = CheckCacheBeforeSend(scanModel.SHA1, content); // scan file
+            scanModel.Result = await CheckCacheBeforeSend(scanModel.SHA1, content); // scan file
 
             return scanModel;
         }
 
         // Parsing file
-        public byte[] GetContent(string url)
+        public async Task<byte[]> GetContent(string url)
         {
             var webRequest = WebRequest.Create(url);
             webRequest.Timeout = 36000;
@@ -38,16 +38,16 @@ namespace FileAnalysis.BLL.Services
                 using (Stream content = response.GetResponseStream())
                 {
                     byte[] buffer = new byte[32768]; //set the size of buffer (chunk)
-                    using (MemoryStream ms = new MemoryStream()) 
+                    using (MemoryStream memoryStream = new MemoryStream()) 
                     {
                         while (true) //loop to the end of the file
                         {
                             // I chose '.ReadAsync' because I measured time that both functions required and
                             // '.ReadAsync' works faster than '.Read'
-                            int read = content.ReadAsync(buffer, 0, buffer.Length).Result; //read each chunk
+                            int read = await content.ReadAsync(buffer, 0, buffer.Length); //read each chunk
                             if (read <= 0) //check for end of file
-                                return ms.ToArray();
-                            ms.Write(buffer, 0, read); 
+                                return memoryStream.ToArray();
+                            memoryStream.Write(buffer, 0, read); 
                         }
                     }
                 }
@@ -62,14 +62,14 @@ namespace FileAnalysis.BLL.Services
         }
 
         // Sending request to scan virus
-        public string SendRequest(byte[] content)
+        public async Task<string> SendRequest(byte[] content)
         {
             // create request
             var client = new RestClient("https://localhost:7030");
             var request = new RestRequest("/api/process/", Method.Post);
             request.AddBody(content);
             // get response
-            var response = client.Execute<string>(request);
+            var response = await client.ExecuteAsync<string>(request);
 
             // Check response
             if (response.StatusCode == HttpStatusCode.OK)
@@ -84,14 +84,14 @@ namespace FileAnalysis.BLL.Services
         // Searching or saving to cache memory
         // **I understand that it may not fulfill the Single Responsibility principle
         // **but I think that Send Request should be next to the saving result of scanning in memory
-        public string CheckCacheBeforeSend(string hashKey, byte[] file)
+        public async Task<string> CheckCacheBeforeSend(string hashKey, byte[] file)
         {
             // if we have analised this file, we will not send a request
             string scanResult;
             var cacheItem = _cache.GetCacheItem(hashKey);
             if (cacheItem is null)
             {
-                scanResult = SendRequest(file); // virus scanning 
+                scanResult = await SendRequest(file); // virus scanning 
                 _cache.Add(hashKey, scanResult, null); // save result in memory cache
             }
             else

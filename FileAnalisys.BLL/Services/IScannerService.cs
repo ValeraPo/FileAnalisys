@@ -4,6 +4,6 @@ namespace FileAnalysis.BLL.Services
 {
     public interface IScannerService
     {
-        ScanModel ScanFile(string url);
+        Task<ScanModel> ScanFile(string url);
     }
 }

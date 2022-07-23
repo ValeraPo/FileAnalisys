@@ -29,13 +29,13 @@ namespace FileAnalysis.API.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status503ServiceUnavailable)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status504GatewayTimeout)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status500InternalServerError)]
-        public ActionResult<ScanResponse> ScanFile(string url)
+        public async Task<ActionResult<ScanResponse>> ScanFile(string url)
         {
             // Validate URL. If URL is not correct, I will not pass it to BLL
             if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
                 throw new FormatException($"url: '{url}' is not valid.");
 
-            var outputs = _automapper.Map<ScanResponse>(_scannerService.ScanFile(url));
+            var outputs = _automapper.Map<ScanResponse>(await _scannerService.ScanFile(url));
             return Ok(outputs);
         }
 
