@@ -1,15 +1,25 @@
 ﻿using FileAnalisys.BLL.Exceptions;
+using FileAnalisys.BLL.Requests;
 using FileAnalysis.BLL.Models;
+using Microsoft.Extensions.Caching.Memory;
 using RestSharp;
 using System.Net;
-using System.Runtime.Caching;
 using System.Security.Cryptography;
 
 namespace FileAnalysis.BLL.Services
 {
     public class ScannerService : IScannerService
     {
-        private ObjectCache _cache = MemoryCache.Default;
+        private IWebRequestCreate _webRequest;
+        private IRestClient _restClient;
+        private IMemoryCache _memoryCache;
+
+        public ScannerService(IWebRequestCreate webRequest, IRestClient restClient, IMemoryCache memoryCache)
+        {
+            _webRequest = webRequest;
+            _restClient = restClient;
+            _memoryCache = memoryCache;
+        }
 
         public async Task<ScanModel> ScanFile(string url)
         {
@@ -24,7 +34,8 @@ namespace FileAnalysis.BLL.Services
         // Parsing file
         public async Task<byte[]> GetContent(string url)
         {
-            var webRequest = WebRequest.Create(url);
+            var webRequest = _webRequest.Create(new Uri(url));
+            //IHttpWebRequest request = this.WebRequestFactory.Create(url);
             webRequest.Timeout = 36000;
 
             using (var response = webRequest.GetResponse())
@@ -38,7 +49,7 @@ namespace FileAnalysis.BLL.Services
                 using (Stream content = response.GetResponseStream())
                 {
                     byte[] buffer = new byte[32768]; //set the size of buffer (chunk)
-                    using (MemoryStream memoryStream = new MemoryStream()) 
+                    using (MemoryStream memoryStream = new MemoryStream())
                     {
                         while (true) //loop to the end of the file
                         {
@@ -47,7 +58,7 @@ namespace FileAnalysis.BLL.Services
                             int read = await content.ReadAsync(buffer, 0, buffer.Length); //read each chunk
                             if (read <= 0) //check for end of file
                                 return memoryStream.ToArray();
-                            memoryStream.Write(buffer, 0, read); 
+                            memoryStream.Write(buffer, 0, read);
                         }
                     }
                 }
@@ -64,12 +75,10 @@ namespace FileAnalysis.BLL.Services
         // Sending request to scan virus
         public async Task<string> SendRequest(byte[] content)
         {
-            // create request
-            var client = new RestClient("https://localhost:7030");
-            var request = new RestRequest("/api/process/", Method.Post);
+            var request = new RestRequest("https://localhost:7030/api/process/", Method.Post);
             request.AddBody(content);
             // get response
-            var response = await client.ExecuteAsync<string>(request);
+            var response = await _restClient.ExecuteAsync<string>(request);
 
             // Check response
             if (response.StatusCode == HttpStatusCode.OK)
@@ -86,17 +95,15 @@ namespace FileAnalysis.BLL.Services
         // **but I think that Send Request should be next to the saving result of scanning in memory
         public async Task<string> CheckCacheBeforeSend(string hashKey, byte[] file)
         {
-            // if we have analised this file, we will not send a request
             string scanResult;
-            var cacheItem = _cache.GetCacheItem(hashKey);
-            if (cacheItem is null)
+
+            // if we have analised this file, we will not send a request
+            if (!_memoryCache.TryGetValue(hashKey, out scanResult))
             {
                 scanResult = await SendRequest(file); // virus scanning 
-                _cache.Add(hashKey, scanResult, null); // save result in memory cache
+                _memoryCache.Set(hashKey, scanResult);
             }
-            else
-                // get result from past scanning 
-                scanResult = (string)cacheItem.Value;
+
             return scanResult;
         }
 
