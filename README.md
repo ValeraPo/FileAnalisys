@@ -1,4 +1,4 @@
-# File Analysis Servise
+# File Analysis Service
 
 ## Description
 This Server imitates virus scanning of a file and calculates SHA1 of this file.
