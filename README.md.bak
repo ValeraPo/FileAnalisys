@@ -1,6 +1,6 @@
-# File Analisysis Servise
+File Analisysis Servise
 
-## Description
+Description
 This Server imitates virus scanning of a file and calculates SHA1 of this file.
 The server gets a URL of a file that you want to scan. 
 Program execution steps:
@@ -11,16 +11,16 @@ Program execution steps:
 - The server calculates SHA1 of file
 - The server try to find the scan result of this file in memory cache
 - If it finds result in memory, the server returns this result and SHA1 to client
-- If it cannot find result in memory, the server sends request to [virus-scanning-backend](https://github.com/ValeraPo/VirusScanning)
+- If it cannot find result in memory, the server sends request to virus scanning backend (https://github.com/ValeraPo/VirusScanning)
 - The server saves result in memory cache
 - The server returns this result and SHA1 to client
 
-## Stack
+Stack
 The server is implemented on C#, .Net 6.0.
 The server sends request to virus scanning backend by RestSharp.
 The server downloads file from URL by WebRequest.
 
-## Requirements
+Requirements
 You need to have Microsoft VisualStudio 2022 or other IDE for C# to launch this Server. 
-You should launch this server together with [virus-scanning-backend](https://github.com/ValeraPo/VirusScanning).
+You should launch this server together with virus scanning backend (https://github.com/ValeraPo/VirusScanning).
 This servers use ports 7216 and 7030. Please check that these ports are free.
