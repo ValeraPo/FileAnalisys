@@ -22,7 +22,7 @@ namespace FileAnalysis.API.Controllers
 
         // Checking file for viruses
         // api/scanner
-        [HttpPost()]
+        [HttpGet]
         [SwaggerOperation("Check file for viruses")]
         [ProducesResponseType(typeof(ScanResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status400BadRequest)]
@@ -33,7 +33,7 @@ namespace FileAnalysis.API.Controllers
         {
             // Validate URL. If URL is not correct, I will not pass it to BLL
             if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-                throw new FormatException($"url: '{url}' is not valid.");
+                throw new UriFormatException($"url: '{url}' is not valid.");
 
             var outputs = _automapper.Map<ScanResponse>(await _scannerService.ScanFile(url));
             return Ok(outputs);

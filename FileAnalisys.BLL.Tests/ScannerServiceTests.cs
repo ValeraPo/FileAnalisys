@@ -1,3 +1,4 @@
+using FileAnalisys.BLL.Exceptions;
 using FileAnalisys.BLL.Requests;
 using FileAnalysis.BLL.Services;
 using Microsoft.Extensions.Caching.Memory;
@@ -50,8 +51,8 @@ namespace FileAnalisys.BLL.Tests
             MockWebRequest(url);
 
             // Imitate Memory Cache
-            var data = "test answer";
-            object expectedValue = data;
+            var expected = "test answer";
+            object expectedValue = expected;
             _mockMemoryCache.Setup(m => m.TryGetValue(It.IsAny<string>(), out expectedValue)).Returns(true);
 
             // when
@@ -59,8 +60,8 @@ namespace FileAnalisys.BLL.Tests
             
             // then
             Assert.IsNotNull(actual);
-            Assert.AreEqual(actual.Result, data);
-            Assert.AreEqual(actual.SHA1, "8c1f28fc2f48c271d6c498f0f249cdde365c54c5".ToUpper()); //result from online hash SHA1
+            Assert.AreEqual(expected, actual.Result);
+            Assert.AreEqual("8c1f28fc2f48c271d6c498f0f249cdde365c54c5".ToUpper(), actual.SHA1); //result from online hash SHA1
             _mockWebRequestCreate.Verify(m => m.Create(new Uri(url)), Times.Once());
             _mockMemoryCache.Verify(m => m.TryGetValue(It.IsAny<string>(), out expectedValue), Times.Once());
             _mockMemoryCache.Verify(m => m.CreateEntry(It.IsAny<object>()), Times.Never()); // Check that .Set was not called
@@ -76,9 +77,9 @@ namespace FileAnalisys.BLL.Tests
             MockWebRequest(url);
 
             // Imitate work of RestSharp
-            var data = "test answer";
-            var expected = Mock.Of<RestResponse<string>>(_ => _.Data == data && _.StatusCode == HttpStatusCode.OK);
-            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+            var expected = "test answer";
+            var response = Mock.Of<RestResponse<string>>(_ => _.Data == expected && _.StatusCode == HttpStatusCode.OK);
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             // Imitate set in MemoryCache
             _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
@@ -88,12 +89,85 @@ namespace FileAnalisys.BLL.Tests
 
             // then
             Assert.IsNotNull(actual);
-            Assert.AreEqual(actual.Result, data);
-            Assert.AreEqual(actual.SHA1, "8c1f28fc2f48c271d6c498f0f249cdde365c54c5".ToUpper()); 
+            Assert.AreEqual(expected, actual.Result);
+            Assert.AreEqual("8c1f28fc2f48c271d6c498f0f249cdde365c54c5".ToUpper(), actual.SHA1); //result from online hash SHA1
             _mockWebRequestCreate.Verify(m => m.Create(new Uri(url)), Times.Once());
             _mockMemoryCache.Verify(m => m.CreateEntry(It.IsAny<object>()), Times.Once()); // Check that .Set was called
             _mockRestClient.Verify(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>()), Times.Once()); // check that RestRequest was sent
         }
+
+        [Test]
+        public async Task ScanFile_FileSizeIsTooBig_ShouldThrowSizeException()
+        {
+            // given
+            // Imitate work of WebRequest
+            var url = "http://example.com";
+            var moqHttpWebRequest = new Mock<WebRequest>();
+            var moqHttpWebResponse = new Mock<WebResponse>();
+            _mockWebRequestCreate.Setup(m => m.Create(new Uri(url))).Returns(moqHttpWebRequest.Object);
+            moqHttpWebRequest.Setup(_ => _.GetResponse()).Returns(moqHttpWebResponse.Object);
+            moqHttpWebResponse.Setup(m => m.Headers.Get("Content-Length")).Returns("210763776"); // mock request for file size
+            var expected = "Size is too big";
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<SizeException>(async () => await _sut.ScanFile(url))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public async Task ScanFile_ResponseIsTimeout_ShouldThrowTimeoutException()
+        {
+            // given
+            // Imitate work of WebRequest
+            var url = "http://example.com";
+            MockWebRequest(url);
+
+            // Imitate work of RestSharp
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ =>_.StatusCode == HttpStatusCode.RequestTimeout && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<TimeoutException>(async () => await _sut.ScanFile(url))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public async Task ScanFile_ResponseIsNotOk_ShouldThrowServiceUnavailableException()
+        {
+            // given
+            // Imitate work of WebRequest
+            var url = "http://example.com";
+            MockWebRequest(url);
+
+            // Imitate work of RestSharp
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ => _.StatusCode == HttpStatusCode.BadRequest && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<ServiceUnavailableException>(async () => await _sut.ScanFile(url))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+
 
     }
 }

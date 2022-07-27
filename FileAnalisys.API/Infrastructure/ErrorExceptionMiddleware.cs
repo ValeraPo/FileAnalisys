@@ -21,9 +21,13 @@ namespace FileAnalisys.API.Infrastructure
             {
                 await _next(context);
             }
-            catch (FormatException error)
+            catch (UriFormatException error)
             {
                 await ConstructResponse(context, HttpStatusCode.BadRequest, error.Message);
+            }
+            catch (SizeException error)
+            {
+                await ConstructResponse(context, HttpStatusCode.RequestEntityTooLarge, error.Message);
             }
             catch (ServiceUnavailableException error)
             {

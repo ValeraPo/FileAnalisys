@@ -47,14 +47,14 @@ namespace FileAnalisys.API.Tests
         [TestCase("www.example.com")]
         [TestCase("not uri")]
         [TestCase("https:/www.example.com")]
-        public async Task ScanFile_UriIsNotValid_ShouldThrowFormatException(string url)
+        public async Task ScanFile_UriIsNotValid_ShouldThrowUriFormatException(string url)
         {
             //given
             var expected = $"url: '{url}' is not valid.";
 
             //when
             var actual = Assert
-                .ThrowsAsync<FormatException>(async () => await _sut.ScanFile(url))!
+                .ThrowsAsync<UriFormatException>(async () => await _sut.ScanFile(url))!
                 .Message;
 
             //then

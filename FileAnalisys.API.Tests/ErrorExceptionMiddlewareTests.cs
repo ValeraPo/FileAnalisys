@@ -1,13 +1,7 @@
-﻿using AutoMapper;
-using FileAnalisys.API.Infrastructure;
+﻿using FileAnalisys.API.Infrastructure;
 using FileAnalisys.API.Models;
 using FileAnalisys.BLL.Exceptions;
-using FileAnalysis.API.Configuration;
-using FileAnalysis.API.Controllers;
-using FileAnalysis.BLL.Models;
-using FileAnalysis.BLL.Services;
 using Microsoft.AspNetCore.Http;
-using Moq;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -51,13 +45,29 @@ namespace FileAnalisys.API.Tests
             Assert.AreEqual(expectedOutput, actual);
         }
 
-        // Check if FormatException, should be Status Code 400
+        // Check if UriFormatException, should be Status Code 400
         [Test]
-        public void Invoke_WhenThrowFormatException_ShouldExceptionResponseModel()
+        public void Invoke_WhenThrowUriFormatException_ShouldExceptionResponseModel()
         {
             //given
             var expected = GetJsonExceptionResponseModel(400);
-            var middlewareInstance = new ErrorExceptionMiddleware(_ => throw new FormatException(ExceptionMassage));
+            var middlewareInstance = new ErrorExceptionMiddleware(_ => throw new UriFormatException(ExceptionMassage));
+
+            //when
+            middlewareInstance.Invoke(_defaultContext);
+
+            //then
+            var actual = GetResponseBody();
+            Assert.AreEqual(expected, actual);
+        }
+
+        // Check if SizeException, should be Status Code 413
+        [Test]
+        public void Invoke_WhenThrowSizeException_ShouldExceptionResponseModel()
+        {
+            //given
+            var expected = GetJsonExceptionResponseModel(413);
+            var middlewareInstance = new ErrorExceptionMiddleware(_ => throw new SizeException(ExceptionMassage));
 
             //when
             middlewareInstance.Invoke(_defaultContext);

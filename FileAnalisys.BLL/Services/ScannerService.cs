@@ -35,7 +35,6 @@ namespace FileAnalysis.BLL.Services
         public async Task<byte[]> GetContent(string url)
         {
             var webRequest = _webRequest.Create(new Uri(url));
-            //IHttpWebRequest request = this.WebRequestFactory.Create(url);
             webRequest.Timeout = 36000;
 
             using (var response = webRequest.GetResponse())
@@ -44,11 +43,11 @@ namespace FileAnalysis.BLL.Services
                 var fileSizeInMegaByte = Math.Round(fileSize / 1024.0 / 1024.0, 2);
                 // Check if size is not very big
                 if (fileSizeInMegaByte > 200)
-                    throw new FormatException("Size is too big");
+                    throw new SizeException("Size is too big");
 
                 using (Stream content = response.GetResponseStream())
                 {
-                    byte[] buffer = new byte[32768]; //set the size of buffer (chunk)
+                    byte[] buffer = new byte[32768]; //set the size of buffer (chunk) 4KB
                     using (MemoryStream memoryStream = new MemoryStream())
                     {
                         while (true) //loop to the end of the file
