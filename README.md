@@ -24,3 +24,14 @@ The server downloads file from URL by WebRequest.
 You need to have Microsoft VisualStudio 2022 or other IDE for C# to launch this Server. 
 You should launch this server together with [virus-scanning-backend](https://github.com/ValeraPo/VirusScanning).
 This servers use ports 7216 and 7030. Please check that these ports are free.
+
+## Instruction
+To scan a file you should launch both servers.
+Two Swagger windows should be opened - VirusScanning and FileAnalisys.API. They must remain opened until scanning is finished. 
+In the FileAnalisys.API window you should click "Try it out" button then paste URL of file in "url" field as shown in picture below.
+
+![image](https://user-images.githubusercontent.com/77934608/181239977-80276402-466f-4ab4-9476-dd4e959c82e1.png)
+
+After that you should click "Execute" button and await for result. 
+
+_Note: File size shouldn't be more than 200 MB_
