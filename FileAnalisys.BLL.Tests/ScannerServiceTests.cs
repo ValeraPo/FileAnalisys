@@ -281,5 +281,93 @@ namespace FileAnalisys.BLL.Tests
             Assert.AreEqual(expected, actual);
         }
         #endregion
+
+        #region CheckCacheBeforeSend tests
+        [Test]
+        public async Task CheckCacheBeforeSend_ResponseIsInMemory_ShouldReturnString()
+        {
+            // given
+            // Imitate Memory Cache
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test answer";
+            object expectedValue = expected;
+            _mockMemoryCache.Setup(m => m.TryGetValue(It.IsAny<string>(), out expectedValue)).Returns(true);
+
+            // when
+            var actual = await _sut.CheckCacheBeforeSend(It.IsAny<string>(), file);
+
+            // then
+            Assert.AreEqual(expected, actual);
+            _mockMemoryCache.Verify(m => m.TryGetValue(It.IsAny<string>(), out expectedValue), Times.Once());
+            _mockMemoryCache.Verify(m => m.CreateEntry(It.IsAny<object>()), Times.Never()); // Check that .Set was not called
+            _mockRestClient.Verify(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>()), Times.Never()); // check that RestRequest wasn't sent
+        }
+
+        [Test]
+        public async Task CheckCacheBeforeSend_ResponseIsNotInMemory_ShouldReturnString()
+        {
+            // given
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test answer";
+            var response = Mock.Of<RestResponse<string>>(_ => _.Data == expected && _.StatusCode == HttpStatusCode.OK);
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = await _sut.CheckCacheBeforeSend(It.IsAny<string>(), file);
+
+            // then
+            Assert.AreEqual(expected, actual);
+            _mockMemoryCache.Verify(m => m.CreateEntry(It.IsAny<object>()), Times.Once()); // Check that .Set was called
+            _mockRestClient.Verify(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>()), Times.Once()); // check that RestRequest was sent
+        }
+
+        [Test]
+        public async Task CheckCacheBeforeSend_ResponseIsTimeout_ShouldThrowTimeoutException()
+        {
+            // given
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ => _.StatusCode == HttpStatusCode.RequestTimeout && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<TimeoutException>(async () => await _sut.CheckCacheBeforeSend(It.IsAny<string>(), file))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public async Task CheckCacheBeforeSend_ResponseIsNotOk_ShouldThrowServiceUnavailableException()
+        {
+            // given
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ => _.StatusCode == HttpStatusCode.BadRequest && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<ServiceUnavailableException>(async () => await _sut.CheckCacheBeforeSend(It.IsAny<string>(), file))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+        #endregion
     }
 }
