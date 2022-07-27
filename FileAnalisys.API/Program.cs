@@ -11,9 +11,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(AutoMapperApiBll)); //Registration automappers
 builder.Services.AddScoped<IScannerService, ScannerService>(); // Registration service
-builder.Services.AddScoped<IWebRequestCreate, MyWebRequest>(); // Injecting WebRequest
-builder.Services.AddScoped<IRestClient, MyRestClient>(); //Injecting RestSharp
-builder.Services.AddMemoryCache(); // Injecting MemoryCache
+builder.Services.AddScoped<IWebRequestCreate, MyWebRequest>(); // Registration WebRequest
+builder.Services.AddScoped<IRestClient, MyRestClient>(); //Registration RestSharp
+builder.Services.AddMemoryCache(); // Registration MemoryCache
 
 var app = builder.Build();
 

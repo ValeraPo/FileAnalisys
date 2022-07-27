@@ -26,6 +26,7 @@ namespace FileAnalysis.API.Controllers
         [SwaggerOperation("Check file for viruses")]
         [ProducesResponseType(typeof(ScanResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status413PayloadTooLarge)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status503ServiceUnavailable)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status504GatewayTimeout)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status500InternalServerError)]
