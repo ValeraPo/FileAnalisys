@@ -22,7 +22,7 @@ namespace FileAnalysis.API.Controllers
 
         // Checking file for viruses
         // api/scanner
-        [HttpGet]
+        [HttpPost]
         [SwaggerOperation("Check file for viruses")]
         [ProducesResponseType(typeof(ScanResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ExceptionResponse), StatusCodes.Status400BadRequest)]
