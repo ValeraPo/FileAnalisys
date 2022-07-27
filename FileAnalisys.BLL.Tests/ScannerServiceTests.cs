@@ -8,6 +8,7 @@ using RestSharp;
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -369,5 +370,16 @@ namespace FileAnalisys.BLL.Tests
             Assert.AreEqual(expected, actual);
         }
         #endregion
+
+        [TestCase(new byte[] { 1, 2, 3, 4, 5, 6, 7 }, "8c1f28fc2f48c271d6c498f0f249cdde365c54c5")]
+        [TestCase(new byte[] { (byte)'t', (byte)'e', (byte)'s', (byte)'t' }, "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3")]
+        public void Hash_ShouldReturnSha1(byte[] file, string expected)
+        {
+            //when
+            var actual = _sut.Hash(file);
+
+            //then
+            Assert.AreEqual(expected.ToUpper(), actual);
+        }
     }
 }
