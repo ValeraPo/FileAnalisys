@@ -64,13 +64,6 @@ namespace FileAnalysis.BLL.Services
             }
         }
 
-        //Hashing file
-        public string Hash(byte[] input)
-        {
-            using var sha1 = SHA1.Create();
-            return Convert.ToHexString(sha1.ComputeHash(input));
-        }
-
         // Sending request to scan virus
         public async Task<string> SendRequest(byte[] content)
         {
@@ -106,5 +99,11 @@ namespace FileAnalysis.BLL.Services
             return scanResult;
         }
 
+        //Hashing file
+        public string Hash(byte[] input)
+        {
+            using var sha1 = SHA1.Create();
+            return Convert.ToHexString(sha1.ComputeHash(input));
+        }
     }
 }

@@ -42,6 +42,7 @@ namespace FileAnalisys.BLL.Tests
             moqHttpWebResponse.Setup(m => m.Headers.Get("Content-Length")).Returns("42"); // mock request for file size
         }
 
+        #region ScanFile tests
         [Test] 
         public async Task ScanFile_ResponseIsInMemory_ShouldReturnScanModel()
         {
@@ -167,7 +168,118 @@ namespace FileAnalisys.BLL.Tests
             // then
             Assert.AreEqual(expected, actual);
         }
+        #endregion
+
+        #region GetContent tests
+        [Test]
+        public async Task GetContent_ShouldReturnContent()
+        {
+            // given
+            // Imitate work of WebRequest
+            var url = "http://example.com";
+            var uri = new Uri(url);
+            var expected = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var moqHttpWebRequest = new Mock<WebRequest>();
+            var moqHttpWebResponse = new Mock<WebResponse>();
+            _mockWebRequestCreate.Setup(m => m.Create(uri)).Returns(moqHttpWebRequest.Object);
+            moqHttpWebRequest.Setup(_ => _.GetResponse()).Returns(moqHttpWebResponse.Object);
+            moqHttpWebResponse.Setup(_ => _.GetResponseStream()).Returns(new MemoryStream(expected)); // mock request for stream
+            moqHttpWebResponse.Setup(m => m.Headers.Get("Content-Length")).Returns("42"); // mock request for file size
 
 
+            // when
+            var actual = await _sut.GetContent(url);
+
+            // then
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(expected, actual);
+            _mockWebRequestCreate.Verify(m => m.Create(new Uri(url)), Times.Once());
+        }
+
+        [Test]
+        public async Task GetContent_FileSizeIsTooBig_ShouldThrowSizeException()
+        {
+            // given
+            // Imitate work of WebRequest
+            var url = "http://example.com";
+            var moqHttpWebRequest = new Mock<WebRequest>();
+            var moqHttpWebResponse = new Mock<WebResponse>();
+            _mockWebRequestCreate.Setup(m => m.Create(new Uri(url))).Returns(moqHttpWebRequest.Object);
+            moqHttpWebRequest.Setup(_ => _.GetResponse()).Returns(moqHttpWebResponse.Object);
+            moqHttpWebResponse.Setup(m => m.Headers.Get("Content-Length")).Returns("210763776"); // mock request for file size
+            var expected = "Size is too big";
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<SizeException>(async () => await _sut.GetContent(url))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+        #endregion
+
+        #region SendRequest tests
+        [Test]
+        public async Task SendRequest_ShouldReturnString()
+        {
+            // given
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test answer";
+            var response = Mock.Of<RestResponse<string>>(_ => _.Data == expected && _.StatusCode == HttpStatusCode.OK);
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // when
+            var actual = await _sut.SendRequest(file);
+
+            // then
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(expected, actual);
+            _mockRestClient.Verify(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>()), Times.Once());
+        }
+
+        [Test]
+        public async Task SendRequest_ResponseIsTimeout_ShouldThrowTimeoutException()
+        {
+            // given
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ => _.StatusCode == HttpStatusCode.RequestTimeout && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<TimeoutException>(async () => await _sut.SendRequest(file))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public async Task SendRequest_ResponseIsNotOk_ShouldThrowServiceUnavailableException()
+        {
+            // given
+            // Imitate work of WebRequest
+            // Imitate work of RestSharp
+            var file = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+            var expected = "test error";
+            var response = Mock.Of<RestResponse<string>>(_ => _.StatusCode == HttpStatusCode.BadRequest && _.ErrorException == new Exception(expected));
+            _mockRestClient.Setup(m => m.ExecuteAsync<string>(It.IsAny<RestRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            // Imitate set in MemoryCache
+            _mockMemoryCache.Setup(m => m.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            // when
+            var actual = Assert
+                .ThrowsAsync<ServiceUnavailableException>(async () => await _sut.SendRequest(file))!
+                .Message;
+
+            // then
+            Assert.AreEqual(expected, actual);
+        }
+        #endregion
     }
 }
